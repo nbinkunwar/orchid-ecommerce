@@ -17,7 +17,7 @@ class CustomInputListScreen extends Screen
     public function query(): array
     {
         return [
-            'customInputs' => CustomInput::paginate()
+            'customInputs' => CustomInput::filters()->defaultSort('id')->paginate()
         ];
     }
 

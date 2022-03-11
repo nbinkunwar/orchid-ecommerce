@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,3 +26,10 @@ Route::get('user', 'App\Http\Controllers\Api\AuthController@getAuthenticatedUser
 
 Route::post('/password/email', 'App\Http\Controllers\Api\AuthController@sendPasswordResetLinkEmail')->middleware('throttle:5,1')->name('password.email');
 Route::post('/password/reset', 'App\Http\Controllers\Api\AuthController@resetPassword')->name('password.reset');
+
+
+Route::get('categoryes',[ProductController::class,'categories']);
+Route::get('categoryes/{id}',[ProductController::class,'category']);
+Route::get('brands/{id}',[ProductController::class,'brands']);
+Route::get('products',[ProductController::class,'products']);
+Route::get('products/{id}',[ProductController::class,'product']);

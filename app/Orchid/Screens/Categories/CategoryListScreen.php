@@ -17,7 +17,7 @@ class CategoryListScreen extends Screen
     public function query(): array
     {
         return [
-            'categories' => Category::paginate()
+            'categories' => Category::filters()->defaultSort('id')->paginate()
         ];
     }
 

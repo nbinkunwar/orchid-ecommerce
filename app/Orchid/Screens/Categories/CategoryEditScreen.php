@@ -4,7 +4,9 @@ namespace App\Orchid\Screens\Categories;
 
 use App\Models\Category;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Request as HttpRequest;
 use Orchid\Screen\Actions\Button;
+use Orchid\Screen\Fields\Cropper;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Quill;
 use Orchid\Screen\Fields\Relation;
@@ -29,6 +31,7 @@ class CategoryEditScreen extends Screen
      */
     public function query(Category $category): array
     {
+        // $category->load('image');
         return [
             'category' => $category
         ];
@@ -97,10 +100,10 @@ class CategoryEditScreen extends Screen
 
                 Relation::make('category.parent_id')
                     ->title('Parent')
-                    ->fromModel(Category::class, 'name'),
-
-                Quill::make('category.body')
-                    ->title('Main text'),
+                    ->fromModel(Category::class, 'name')->applyScope('parentEmpty'),
+                
+                Cropper::make('category.image')
+                    ->title('Image')->targetId()
 
             ])
         ];
@@ -112,9 +115,12 @@ class CategoryEditScreen extends Screen
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function createOrUpdate(Category $category, Request $request)
+    public function createOrUpdate(Category $category, HttpRequest $request)
     {
         $category->fill($request->get('category'))->save();
+        // $category->attachment()->syncWithoutDetaching(
+        //     $request->input('category.image', [])
+        // );
 
         Alert::info('You have successfully created an category.');
 

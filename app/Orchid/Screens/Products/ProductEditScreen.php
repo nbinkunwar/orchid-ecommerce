@@ -2,15 +2,20 @@
 
 namespace App\Orchid\Screens\Products;
 
+use App\Http\Requests\StoreProductRequest;
+use App\Models\Category;
+use App\Models\CustomInput;
 use App\Models\Product;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Request;
+use Orchid\Attachment\Models\Attachment;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Quill;
 use Orchid\Screen\Fields\Relation as FieldsRelation;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\TextArea;
+use Orchid\Screen\Fields\Upload;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Alert;
 use Orchid\Support\Facades\Layout;
@@ -31,8 +36,13 @@ class ProductEditScreen extends Screen
      */
     public function query(Product $product): array
     {
+        $product->load('attachment');
+        // $product->load('customInputs');
         return [
-            'product' => $product
+            'product' => $product,
+            'customInputs'=>$product->customInputs,
+            'categories'=>$product->categories,
+            'bundleItems'=>$product->bundleItems,
         ];
     }
 
@@ -91,11 +101,8 @@ class ProductEditScreen extends Screen
                     ->placeholder('Product Title')
                     ->help('Specify a short descriptive title for this product.'),
 
-                TextArea::make('product.description')
-                    ->title('Description')
-                    ->rows(3)
-                    ->maxlength(200)
-                    ->placeholder('Brief description for preview'),
+                
+
                 Select::make('product.product_type')
                 ->title('Product Type')
                 ->options([
@@ -112,20 +119,39 @@ class ProductEditScreen extends Screen
                     '2xl'=>'2XL'
                 ])->multiple(),
 
-                FieldsRelation::make('product.bundles')
-                ->fromModel(Product::class,'name')
+                FieldsRelation::make('customInputs.')
+                ->title('Custom Inputs')
+                ->fromModel(CustomInput::class,'name')->multiple(),
+
+                FieldsRelation::make('categories.')
+                ->title('Categories')
+                ->fromModel(Category::class,'name')->multiple(),
+
+                FieldsRelation::make('bundleItems.')
+                ->fromModel(Product::class,'name')->applyScope('bundleable')
                 ->multiple()->title('Choose Products To Bundle')->canSee($this->product->product_type=='bundle'),
 
                 Input::make('product.price')
                 ->title('Price')
                 ->type('number'),
 
+                
+
                 Input::make('product.special_price')
                 ->title('Discounted Price')
                 ->type('number'),
 
-                Quill::make('product.body')
-                    ->title('Main text'),
+                TextArea::make('product.short_description')
+                    ->title('Short Description')
+                    ->rows(3)
+                    ->maxlength(200)
+                    ->placeholder('Brief description for preview'),
+
+                Quill::make('product.description')
+                    ->title('Description')
+                    ->rows(5)
+                    ->placeholder('Description'),
+                Upload::make('product.attachment')->title('Attachments'),
 
             ])
         ];
@@ -137,9 +163,16 @@ class ProductEditScreen extends Screen
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function createOrUpdate(Product $product, Request $request)
+    public function createOrUpdate(Product $product, StoreProductRequest $request)
     {
         $product->fill($request->get('product'))->save();
+
+        $product->customInputs()->sync($request->get('customInputs'));
+        $product->categories()->sync($request->get('categories'));
+        $product->bundleItems()->sync($request->get('bundleItems'));
+        $product->attachment()->syncWithoutDetaching(
+            $request->input('product.attachment', [])
+        );
 
         Alert::info('You have successfully created an product.');
 

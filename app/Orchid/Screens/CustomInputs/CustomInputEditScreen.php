@@ -2,13 +2,16 @@
 
 namespace App\Orchid\Screens\CustomInputs;
 
+use App\Http\Requests\CustomInputRequest;
 use App\Models\CustomInput;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Request as HttpRequest;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Quill;
 use Orchid\Screen\Fields\TextArea;
+use Orchid\Screen\Fields\Upload;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Alert;
 use Orchid\Support\Facades\Layout;
@@ -29,6 +32,7 @@ class CustomInputEditScreen extends Screen
      */
     public function query(CustomInput $customInput): array
     {
+        $customInput->load('attachment');
         return [
             'customInput' => $customInput
         ];
@@ -39,7 +43,7 @@ class CustomInputEditScreen extends Screen
      */
     public function name(): ?string
     {
-        return $this->customInput->exists ? 'Edit customInput' : 'Creating a new customInput';
+        return $this->customInput->exists ? 'Edit custom Input' : 'Creating a new custom Input';
     }
     
     /**
@@ -58,7 +62,7 @@ class CustomInputEditScreen extends Screen
     public function commandBar(): array
     {
         return [
-            Button::make('Create customInput')
+            Button::make('Create custom Input')
                 ->icon('pencil')
                 ->method('createOrUpdate')
                 ->canSee(!$this->customInput->exists),
@@ -93,11 +97,18 @@ class CustomInputEditScreen extends Screen
                     ->placeholder('Label')
                     ->help('Specify a short descriptive label for this.'),
 
+                // Input::make('customInput.video')
+                //     ->title('Video Link')
+                //     ->placeholder('Video Link')
+                //     ->help('Specify a short descriptive label for this.'),
+
                 TextArea::make('customInput.description')
                     ->title('Description')
                     ->rows(3)
                     ->maxlength(200)
-                    ->placeholder('Brief description for preview')
+                    ->placeholder('Brief description for preview'),
+
+                Upload::make('customInput.attachment')->title('Attachments')
 
             ])
         ];
@@ -109,11 +120,14 @@ class CustomInputEditScreen extends Screen
      *
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function createOrUpdate(CustomInput $customInput, Request $request)
+    public function createOrUpdate(CustomInput $customInput, CustomInputRequest $request)
     {
         $customInput->fill($request->get('customInput'))->save();
+        $customInput->attachment()->syncWithoutDetaching(
+            $request->input('customInput.attachment', [])
+        );
 
-        Alert::info('You have successfully created an customInput.');
+        Alert::info('You have successfully saved a custom Input.');
 
         return redirect()->route('platform.customInput.list');
     }
@@ -128,7 +142,7 @@ class CustomInputEditScreen extends Screen
     {
         $customInput->delete();
 
-        Alert::info('You have successfully deleted the customInput.');
+        Alert::info('You have successfully deleted the custom Input.');
 
         return redirect()->route('platform.customInput.list');
     }

@@ -66,7 +66,7 @@ return [
     |
     */
 
-    'guard' => config('auth.defaults.guard', 'web'),
+    'guard' => config('auth.defaults.guard', 'sanctum'),
 
     /*
     |--------------------------------------------------------------------------
@@ -128,8 +128,8 @@ return [
     */
 
     'template' => [
-        'header' => null,
-        'footer' => null,
+        'header' => 'admin.header',
+        'footer' => 'admin.footer',
     ],
 
     /*
